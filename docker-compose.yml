@@ -1,0 +1,47 @@
+services:
+  # MySQL db settings
+  mysql_db:
+    image: mysql:8.0
+    container_name: partstackdb
+    restart: always
+    environment:
+      MYSQL_DATABASE: partstack
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  # for the backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: partstack_backend
+    restart: always
+    depends_on:
+      - mysql_db
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DB_HOST: mysql_db
+      DB_DATABASE: partstack
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+  # for the frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: partstack_frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api
+
+volumes:
+  db_data:
