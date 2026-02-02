@@ -2,11 +2,12 @@
 
 import api from "@/lib/api"
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
 import { ProductCard } from "@/components/product-card"
 import { LoginModal } from "@/components/login-modal"
-import { Search, Filter, Plus, X } from "lucide-react"
+import { Search, Filter, Plus, X, Lock } from "lucide-react"
 import type React from "react"
 
 // defs
@@ -223,7 +224,7 @@ const handleDragOver = (e: React.DragEvent) => {
       <Navbar onLoginClick={() => setLoginModalOpen(true)} />
 
       {/* Page Header */}
-      <section className="bg-gradient-to-r from-[#BF092F] to-[#132440] text-white py-12">
+      <section className="bg-linear-to-r from-[#BF092F] to-[#132440] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div>
             <h1 className="text-4xl font-serif font-bold mb-2">Our Products</h1>
@@ -288,6 +289,33 @@ const handleDragOver = (e: React.DragEvent) => {
       </section>
 
       {/* Products Grid */}
+      {!isLoggedIn ? (
+          /* 3. Call to Action Style for Logged Out Users */
+          <div className="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-8 md:p-16 text-center shadow-sm">
+            <div className="bg-[#fdf2f4] w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Lock className="text-[#BF092F] w-8 h-8" />
+            </div>
+            <h3 className="text-2xl font-bold text-[#132440] mb-4">Exclusive Content</h3>
+            <p className="text-gray-600 max-w-md mx-auto mb-8">
+              Our featured product catalog is reserved for members. Sign in to view prices, availability, and start shopping.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                className="bg-[#BF092F] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#9a062a] transition shadow-md"
+              >
+                Sign In to View
+              </button>
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                className="bg-white text-[#132440] border border-gray-300 px-8 py-3 rounded-lg font-semibold hover:bg-gray-50 transition"
+              >
+                Create Account
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* 4. The Original Grid (Only shown if logged in) */
       <section className="py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {isDataLoading ? (
@@ -317,6 +345,7 @@ const handleDragOver = (e: React.DragEvent) => {
           )}
         </div>
       </section>
+      )}
 
       {addProductModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -527,7 +556,9 @@ const handleDragOver = (e: React.DragEvent) => {
       )}
 
       <Footer />
-      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} onLoginSuccess={function (user: any): void {
+        throw new Error("Function not implemented.")
+      } } />
     </main>
   )
 }
