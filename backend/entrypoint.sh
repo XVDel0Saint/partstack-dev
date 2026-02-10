@@ -25,6 +25,7 @@ fi
 if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
     echo "Installing Laravel Passport (keys + clients)..."
     php artisan passport:install --force --no-interaction
+    php artisan passport:client --personal --no-interaction
 else
     echo "Passport already initialized."
 fi
