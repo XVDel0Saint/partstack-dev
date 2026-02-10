@@ -15,9 +15,13 @@ else
 fi
 
 # Generate Passport keys if missing
+mkdir -p storage/oauth
+chown -R www-data:www-data storage
+chmod -R 775 storage
+
 if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
     echo "Generating Laravel Passport keys..."
-    php artisan passport:install --force
+    php artisan passport:keys --force
 else
     echo "Passport keys already exist."
 fi
