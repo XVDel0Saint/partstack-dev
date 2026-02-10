@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     zip unzip git curl nginx supervisor
 
-# PHP extensions for Laravel
+# Install PHP extensions for Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
@@ -22,15 +22,15 @@ COPY . .
 # Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions
+# Set permissions for storage & cache
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Copy custom Nginx configuration
+# Copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/sites-available/default
 
 # Expose HTTP port
 EXPOSE 80
 
-# Start both PHP-FPM and Nginx
-CMD ["sh", "-c", "php artisan migrate --force && php-fpm -D && nginx -g 'daemon off;'"]
+# Run migrations and seed database, then start PHP-FPM + Nginx
+CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --class=DatabaseSeeder && php-fpm -D && nginx -g 'daemon off;'"]
