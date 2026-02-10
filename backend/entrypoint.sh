@@ -29,6 +29,9 @@ else
     echo "Passport keys already exist."
 fi
 
+# Ensure keys are readable
+chmod 644 storage/oauth/*.key
+
 # Start PHP-FPM + Nginx
 echo "Starting PHP-FPM and Nginx..."
 php-fpm -D
