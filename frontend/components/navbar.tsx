@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Menu, X, ShoppingCart } from "lucide-react"
+import AppIcon from '@/public/apple-icon.png'
 
 interface NavbarProps {
   onLoginClick: () => void
@@ -59,8 +60,8 @@ useEffect(() => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#BF092F] rounded flex items-center justify-center">
-              <span className="text-white font-serif font-bold text-lg">P</span>
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img src={AppIcon.src} className="rounded flex" alt="PartStack Icon"/>
             </div>
             <span className="text-2xl font-serif font-bold text-[#132440] hidden sm:inline">PartStack</span>
           </Link>
