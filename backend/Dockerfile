@@ -1,36 +1,40 @@
-# Base image: PHP-FPM
+# base image: PHP-FPM
 FROM php:8.2-fpm
 
-# Install system dependencies
+# installs system dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     zip unzip git curl nginx supervisor
 
-# Install PHP extensions for Laravel
+# installs PHP extensions for Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# Install Composer
+# installs Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# set working directory
 WORKDIR /var/www/html
 
-# Copy project files
+# copy project files
 COPY . .
 
-# Install PHP dependencies
+# install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions for storage & cache
+# set some permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# Copy Nginx configuration
+# copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/sites-available/default
 
-# Expose HTTP port
+# copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# expose HTTP port
 EXPOSE 80
 
-# Run migrations and seed database, then start PHP-FPM + Nginx
-CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --class=DatabaseSeeder && php-fpm -D && nginx -g 'daemon off;'"]
+# uses the entrypoint script to start the container
+CMD ["/entrypoint.sh"]
