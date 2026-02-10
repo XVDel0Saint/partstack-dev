@@ -24,7 +24,12 @@ class AuthController extends Controller
             'role' => $request->role ?? 'user',
         ]);
 
-        $token = $user->createToken('PartStack')->accessToken;
+        try {
+            $token = $user->createToken('PartStack')->accessToken;
+        } catch (\Exception $e) {
+            \Log::error('Token creation failed', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Token creation failed'], 500);
+        }
 
         return response()->json([
             'access_token' => $token,
