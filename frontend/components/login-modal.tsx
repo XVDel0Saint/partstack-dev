@@ -23,71 +23,73 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   if (!isOpen) return null
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
-    setSuccess("")
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setLoading(true)
+  setError("")
+  setSuccess("")
 
-    try {
-      const endpoint = isSignUp ? "/register" : "/login"
+  try {
+    const endpoint = isSignUp ? "/register" : "/login"
 
-      const response = await api.post(endpoint, {
-        email,
-        password,
-        role: isAdmin ? "admin" : "user",
-      })
-
-      /**
-       * ✅ SUPPORT BOTH COMMON BACKEND SHAPES
-       */
-      const payload = response.data
-
-      const access_token =
-      payload?.access_token ||
-      payload?.data?.access_token ||
-      payload?.data?.token
-
-      const user =
-      payload?.user ||
-      payload?.data?.user
-
-      if (!access_token || !user) {
-        console.error("Unexpected login response:", payload)
-        throw new Error("Invalid login response format")
-      }
-
-
-      localStorage.setItem("access_token", access_token)
-      localStorage.setItem("user", JSON.stringify(user))
-
-      setSuccess(
-        isSignUp
-          ? "Account created successfully!"
-          : "Login successful!"
-      )
-
-      setTimeout(() => {
-        onClose()
-        setEmail("")
-        setPassword("")
-        setError("")
-        setSuccess("")
-        window.dispatchEvent(new Event("auth-changed"))
-      }, 600)
-
-    } catch (err: any) {
-      console.error(err)
-
-      setError(
-        err.response?.data?.message ||
-        err.message ||
-        "Login failed"
-      )
-    } finally {
-      setLoading(false)
+    // Build payload properly
+    const payload: Record<string, any> = {
+      email,
+      password,
     }
+
+    // Include role only on signup
+    if (isSignUp) {
+      payload.role = isAdmin ? "admin" : "user"
+      payload.name = email.split('@')[0] || "User"// if your frontend has a name field, add it here
+    }
+
+    // Use your existing api instance
+    const response = await api.post(endpoint, payload, {
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json", // ensures Laravel returns JSON errors properly
+      },
+    })
+
+    // Support multiple backend shapes
+    const data = response.data
+    const access_token =
+      data?.access_token || data?.data?.access_token || data?.data?.token
+    const user = data?.user || data?.data?.user
+
+    if (!access_token || !user) {
+      console.error("Unexpected login response:", data)
+      throw new Error("Invalid login response format")
+    }
+
+    // Store credentials locally
+    localStorage.setItem("access_token", access_token)
+    localStorage.setItem("user", JSON.stringify(user))
+
+    setSuccess(isSignUp ? "Account created successfully!" : "Login successful!")
+
+    // Reset form and close modal after a short delay
+    setTimeout(() => {
+      onClose()
+      setEmail("")
+      setPassword("")
+      setError("")
+      setSuccess("")
+      window.dispatchEvent(new Event("auth-changed"))
+    }, 600)
+  } catch (err: any) {
+    console.error(err)
+    setError(
+      err.response?.data?.message ||
+      err.message ||
+      "Login failed"
+    )
+  } finally {
+    setLoading(false)
   }
+}
+
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
