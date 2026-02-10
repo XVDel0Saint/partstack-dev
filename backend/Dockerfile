@@ -12,19 +12,18 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . .
 
-# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Nginx Config: Ensure it is copied to the correct location for Debian/Ubuntu
+# Ensure permissions are set early
+RUN chown -R www-data:www-data storage bootstrap/cache && chmod -R 775 storage bootstrap/cache
+
 COPY ./nginx.conf /etc/nginx/sites-available/default
-# Create a symbolic link if it doesn't exist
 RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# IMPORTANT: Railway uses a dynamic PORT.
-# We will use sed in the entrypoint or ensure nginx.conf uses 80
+# Use a standard port - we'll tell Railway to look here
 EXPOSE 80
 
 CMD ["/entrypoint.sh"]

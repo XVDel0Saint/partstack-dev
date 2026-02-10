@@ -1,47 +1,49 @@
 #!/bin/sh
-set -e # Exit immediately if a command fails
+# Exit on any error
+set -e
 
-echo "Starting container setup..."
+echo "Starting container..."
 
-# 1. Ensure storage permissions
-mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/oauth
+# 1. Fix Permissions (Crucial for Passport and Cache)
+mkdir -p storage/oauth storage/framework/sessions storage/framework/views storage/framework/cache
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-# 2. Wait for Database (Important for Railway)
-# This prevents the 500 error caused by the app starting before the DB is ready
-echo "Waiting for database connection..."
-until php artisan db:monitor; do
-  echo "Database not ready - waiting..."
+# 2. WAIT FOR DATABASE (The missing piece)
+# This prevents the 500 error during the 'tinker' check
+echo "Waiting for database to be ready..."
+until php artisan db:monitor > /dev/null 2>&1; do
+  echo "Database is unavailable - sleeping..."
   sleep 2
 done
 
-# 3. Run Migrations & Seeders
-# We check if migrations have ever run by looking at the migrations table
-echo "Checking migration status..."
-if ! php artisan migrate:status > /dev/null 2>&1; then
-    echo "First time setup: Running migrations and seeders..."
+# 3. Your Seeder Logic (Improved)
+# We use migrate:status to check if the migrations table even exists
+echo "Checking if database needs seeding..."
+TABLE_EXISTS=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
+
+if [ "$TABLE_EXISTS" = "0" ]; then
+    echo "No users table found. Running migrations and seeders..."
     php artisan migrate --force
     php artisan db:seed --force
 else
-    echo "Database already exists. Running pending migrations..."
+    echo "Database already has tables. Running any pending migrations..."
     php artisan migrate --force
 fi
 
-# 4. Laravel Passport Setup
-if [ ! -f storage/oauth/private.key ]; then
-    echo "Generating Passport keys..."
-    php artisan passport:keys --force
-    # Only run install if you need the DB clients created too
-    php artisan passport:install --force
+# 4. Your Passport Logic
+if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
+    echo "Installing Laravel Passport..."
+    php artisan passport:install --force --no-interaction
+else
+    echo "Passport keys already present."
 fi
-chmod 644 storage/oauth/*.key
+
+# Ensure keys are readable by the web server
+chmod 600 storage/oauth/*.key
 chown www-data:www-data storage/oauth/*.key
 
 # 5. Start Services
-echo "Starting PHP-FPM..."
+echo "Starting PHP-FPM and Nginx..."
 php-fpm -D
-
-echo "Starting Nginx..."
-# We use 'daemon off' so the container stays alive
 nginx -g 'daemon off;'
