@@ -1,40 +1,30 @@
-# Base image: PHP-FPM
 FROM php:8.2-fpm
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
-    zip unzip git curl nginx supervisor
+    zip unzip git curl nginx
 
-# Install PHP extensions for Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www/html
-
-# Copy project files
 COPY . .
 
-# Install PHP dependencies
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Set permissions
-RUN chown -R www-data:www-data storage bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
-
-# Copy Nginx configuration
+# Nginx Config: Ensure it is copied to the correct location for Debian/Ubuntu
 COPY ./nginx.conf /etc/nginx/sites-available/default
+# Create a symbolic link if it doesn't exist
+RUN ln -sf /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 
-# Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# Expose HTTP port
+# IMPORTANT: Railway uses a dynamic PORT.
+# We will use sed in the entrypoint or ensure nginx.conf uses 80
 EXPOSE 80
 
-# Start container via entrypoint
 CMD ["/entrypoint.sh"]

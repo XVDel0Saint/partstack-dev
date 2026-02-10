@@ -1,38 +1,47 @@
 #!/bin/sh
+set -e # Exit immediately if a command fails
 
-echo "Starting container..."
+echo "Starting container setup..."
 
-# ----------------------------
-# Ensure storage directories exist and have correct permissions
-# ----------------------------
-mkdir -p storage/oauth
+# 1. Ensure storage permissions
+mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views storage/oauth
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-# Run migrations + seeders if DB is empty
-TABLE_CHECK=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
+# 2. Wait for Database (Important for Railway)
+# This prevents the 500 error caused by the app starting before the DB is ready
+echo "Waiting for database connection..."
+until php artisan db:monitor; do
+  echo "Database not ready - waiting..."
+  sleep 2
+done
 
-if [ "$TABLE_CHECK" = "0" ]; then
-    echo "Running migrations..."
+# 3. Run Migrations & Seeders
+# We check if migrations have ever run by looking at the migrations table
+echo "Checking migration status..."
+if ! php artisan migrate:status > /dev/null 2>&1; then
+    echo "First time setup: Running migrations and seeders..."
     php artisan migrate --force
-    echo "Running seeders..."
-    php artisan db:seed
+    php artisan db:seed --force
 else
-    echo "Migrations already applied, skipping."
+    echo "Database already exists. Running pending migrations..."
+    php artisan migrate --force
 fi
 
-# Generate Passport keys if missing
-if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
-    echo "Installing Laravel Passport (keys + clients)..."
-    php artisan passport:install --force --no-interaction
-else
-    echo "Passport already initialized."
+# 4. Laravel Passport Setup
+if [ ! -f storage/oauth/private.key ]; then
+    echo "Generating Passport keys..."
+    php artisan passport:keys --force
+    # Only run install if you need the DB clients created too
+    php artisan passport:install --force
 fi
-
-# Ensure keys are readable
 chmod 644 storage/oauth/*.key
+chown www-data:www-data storage/oauth/*.key
 
-# Start PHP-FPM + Nginx
-echo "Starting PHP-FPM and Nginx..."
+# 5. Start Services
+echo "Starting PHP-FPM..."
 php-fpm -D
+
+echo "Starting Nginx..."
+# We use 'daemon off' so the container stays alive
 nginx -g 'daemon off;'
