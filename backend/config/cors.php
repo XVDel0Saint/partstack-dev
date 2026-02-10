@@ -19,9 +19,10 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [
-        env('FRONTEND_URL'),
-    ],
+    'allowed_origins' => array_map(
+    fn($origin) => rtrim($origin, '/'),
+    explode(',', env('FRONTEND_URLS', ''))
+    ),
 
     'allowed_origins_patterns' => [],
 
