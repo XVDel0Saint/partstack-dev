@@ -26,12 +26,12 @@ if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
     echo "Installing Laravel Passport (keys + clients)..."
     php artisan passport:install --force --no-interaction
     php artisan passport:client --personal --no-interaction
+    chown www-data:www-data storage/oauth/*.key
+    chmod 600 storage/oauth/*.key
+    echo "Passport keys generated and secured."
 else
     echo "Passport already initialized."
 fi
-
-# Ensure keys are readable
-chmod 644 storage/oauth/*.key
 
 # Start PHP-FPM + Nginx
 echo "Starting PHP-FPM and Nginx..."
