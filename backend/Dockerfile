@@ -1,36 +1,36 @@
-FROM php:8.2-apache
+# Base image: PHP-FPM
+FROM php:8.2-fpm
 
-# install necessary dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    libpng-dev \
-    libjpeg-dev \
-    libfreetype6-dev \
-    zip \
-    unzip \
-    git \
-    curl
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    zip unzip git curl nginx supervisor
 
-# install PHP extensions
+# PHP extensions for Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# apache mod_rewrite
-RUN a2enmod rewrite
-
-# install Composer
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set working directory
 WORKDIR /var/www/html
 
-# copy project files
+# Copy project files
 COPY . .
 
-# set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+# Install PHP dependencies
+RUN composer install --no-dev --optimize-autoloader
 
-# change apache document root to Laravel's public folder as it is needed
-ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/000-default.conf
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf
+# Set permissions
+RUN chown -R www-data:www-data storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
 
+# Copy custom Nginx configuration
+COPY ./nginx.conf /etc/nginx/sites-available/default
+
+# Expose HTTP port
 EXPOSE 80
+
+# Start both PHP-FPM and Nginx
+CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
