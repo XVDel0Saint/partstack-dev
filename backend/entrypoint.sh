@@ -1,49 +1,38 @@
 #!/bin/sh
-# Exit on any error
-set -e
 
 echo "Starting container..."
 
-# 1. Fix Permissions (Crucial for Passport and Cache)
-mkdir -p storage/oauth storage/framework/sessions storage/framework/views storage/framework/cache
+# ----------------------------
+# Ensure storage directories exist and have correct permissions
+# ----------------------------
+mkdir -p storage/oauth
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
-# 2. WAIT FOR DATABASE (The missing piece)
-# This prevents the 500 error during the 'tinker' check
-echo "Waiting for database to be ready..."
-until php artisan db:monitor > /dev/null 2>&1; do
-  echo "Database is unavailable - sleeping..."
-  sleep 2
-done
+# Run migrations + seeders if DB is empty
+TABLE_CHECK=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
 
-# 3. Your Seeder Logic (Improved)
-# We use migrate:status to check if the migrations table even exists
-echo "Checking if database needs seeding..."
-TABLE_EXISTS=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
-
-if [ "$TABLE_EXISTS" = "0" ]; then
-    echo "No users table found. Running migrations and seeders..."
+if [ "$TABLE_CHECK" = "0" ]; then
+    echo "Running migrations..."
     php artisan migrate --force
-    php artisan db:seed --force
+    echo "Running seeders..."
+    php artisan db:seed
 else
-    echo "Database already has tables. Running any pending migrations..."
-    php artisan migrate --force
+    echo "Migrations already applied, skipping."
 fi
 
-# 4. Your Passport Logic
+# Generate Passport keys if missing
 if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
-    echo "Installing Laravel Passport..."
+    echo "Installing Laravel Passport (keys + clients)..."
     php artisan passport:install --force --no-interaction
 else
-    echo "Passport keys already present."
+    echo "Passport already initialized."
 fi
 
-# Ensure keys are readable by the web server
-chmod 600 storage/oauth/*.key
-chown www-data:www-data storage/oauth/*.key
+# Ensure keys are readable
+chmod 644 storage/oauth/*.key
 
-# 5. Start Services
+# Start PHP-FPM + Nginx
 echo "Starting PHP-FPM and Nginx..."
 php-fpm -D
 nginx -g 'daemon off;'
