@@ -23,10 +23,10 @@ fi
 
 # Generate Passport keys if missing
 if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
-    echo "Generating Laravel Passport keys..."
-    php artisan passport:keys --force
+    echo "Installing Laravel Passport (keys + clients)..."
+    php artisan passport:install --force --no-interaction
 else
-    echo "Passport keys already exist."
+    echo "Passport already initialized."
 fi
 
 # Ensure keys are readable
