@@ -8,12 +8,17 @@ const api = axios.create({
   },
 })
 
-// will automatically attach token if ever available
+// will automatically attach token if ever available without attaching auth routes
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("access_token")
-  if (token) {
+  if (
+    token &&
+    !config.url?.includes("/login") &&
+    !config.url?.includes("/register")
+  ) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
   return config
 })
 
