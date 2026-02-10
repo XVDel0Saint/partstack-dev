@@ -29,6 +29,7 @@ echo DB::table('oauth_clients')->count();
 if [ "$CLIENT_COUNT" = "0" ]; then
     echo "Installing Passport clients..."
     php artisan passport:install --force
+    chmod 644 storage/oauth/*.key
 else
     echo "Passport clients already exist."
 fi
