@@ -2,6 +2,13 @@
 
 echo "Starting container..."
 
+# ----------------------------
+# Ensure storage directories exist and have correct permissions
+# ----------------------------
+mkdir -p storage/oauth
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+
 # Run migrations + seeders if DB is empty
 TABLE_CHECK=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
 
@@ -15,10 +22,6 @@ else
 fi
 
 # Generate Passport keys if missing
-mkdir -p storage/oauth
-chown -R www-data:www-data storage
-chmod -R 775 storage
-
 if [ ! -f storage/oauth/private.key ] || [ ! -f storage/oauth/public.key ]; then
     echo "Generating Laravel Passport keys..."
     php artisan passport:keys --force
@@ -26,8 +29,7 @@ else
     echo "Passport keys already exist."
 fi
 
-
-# Starts PHP-FPM + Nginx
+# Start PHP-FPM + Nginx
 echo "Starting PHP-FPM and Nginx..."
 php-fpm -D
 nginx -g 'daemon off;'

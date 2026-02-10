@@ -1,40 +1,40 @@
-# base image: PHP-FPM
+# Base image: PHP-FPM
 FROM php:8.2-fpm
 
-# installs system dependencies
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     zip unzip git curl nginx supervisor
 
-# installs PHP extensions for Laravel
+# Install PHP extensions for Laravel
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install gd pdo pdo_mysql
 
-# installs Composer
+# Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# set working directory
+# Set working directory
 WORKDIR /var/www/html
 
-# copy project files
+# Copy project files
 COPY . .
 
-# install PHP dependencies
+# Install PHP dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# set some permissions
+# Set permissions
 RUN chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache
 
-# copy Nginx configuration
+# Copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/sites-available/default
 
-# copy entrypoint script
+# Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-# expose HTTP port
+# Expose HTTP port
 EXPOSE 80
 
-# uses the entrypoint script to start the container
+# Start container via entrypoint
 CMD ["/entrypoint.sh"]
