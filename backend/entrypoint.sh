@@ -16,7 +16,7 @@ if [ "$TABLE_CHECK" = "0" ]; then
     echo "Running migrations..."
     php artisan migrate --force
     echo "Running seeders..."
-    php artisan db:seed --class=DatabaseSeeder
+    php artisan db:seed
 else
     echo "Migrations already applied, skipping."
 fi
