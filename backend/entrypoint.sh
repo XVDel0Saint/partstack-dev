@@ -30,6 +30,7 @@ if [ "$CLIENT_COUNT" = "0" ]; then
     echo "Installing Passport clients..."
     php artisan passport:keys --force
     php artisan passport:install --force
+    php artisan passport:client --personal --no-interaction || true
     chmod 644 storage/oauth/*.key
 else
     echo "Passport clients already exist."
