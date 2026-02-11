@@ -32,11 +32,17 @@ if [ "$CLIENT_COUNT" = "0" ]; then
     php artisan passport:install --force
     php artisan passport:client --personal --no-interaction || true
     chmod 644 storage/oauth/*.key
+
 else
     echo "Passport clients already exist."
 fi
 
+# clears
+    php artisan config:clear
+    php artisan cache:clear
+    php artisan route:clear
+
 # Start PHP-FPM + Nginx
-echo "Starting PHP-FPM and Nginx..."
-php-fpm -D
-nginx -g 'daemon off;'
+    echo "Starting PHP-FPM and Nginx..."
+    php-fpm -D
+    nginx -g 'daemon off;'
