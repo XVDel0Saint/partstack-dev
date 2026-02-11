@@ -27,8 +27,12 @@ class AuthController extends Controller
         try {
             $token = $user->createToken('PartStack')->accessToken;
         } catch (\Exception $e) {
-            \Log::error('Token creation failed', ['error' => $e->getMessage()]);
-            return response()->json(['message' => 'Token creation failed'], 500);
+            // CHANGE THIS LINE to see the actual error (e.g., "Personal access client not found")
+            return response()->json([
+                'message' => 'Token creation failed',
+                'debug_error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString() // Optional: for very deep debugging
+            ], 500);
         }
 
         return response()->json([
