@@ -9,6 +9,17 @@ mkdir -p storage/oauth
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 
+echo "Forcing Environment Sync..."
+
+# 1. Physically delete the config cache file if it exists
+# This is the most reliable way to stop the SQLite fallback
+rm -f bootstrap/cache/config.php
+rm -f bootstrap/cache/routes.php
+rm -f bootstrap/cache/services.php
+
+# 2. Hard-set the connection for the shell session
+export DB_CONNECTION=mysql
+
 # Run migrations + seeders if DB is empty
 TABLE_CHECK=$(php artisan tinker --execute "echo Schema::hasTable('users') ? '1' : '0';")
 
