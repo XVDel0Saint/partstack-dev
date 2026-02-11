@@ -23,9 +23,11 @@ class AuthServiceProvider extends ServiceProvider
         // Point exactly to the folder where your entrypoint.sh creates the keys
         Passport::loadKeysFrom(storage_path('oauth'));
 
-        // Your expiration logic is good!
-        Passport::tokensExpireIn(now()->addHours(2));
-        Passport::refreshTokensExpireIn(now()->addDays(30));
+        // Force Passport to use the Client ID and Secret from your Environment Variables
+        Passport::usePersonalAccessClient(
+            config('passport.personal_access_client.id'),
+            config('passport.personal_access_client.secret')
+        );
 
         // Optional: If you use Personal Access Tokens, set their expiry too
         Passport::personalAccessTokensExpireIn(now()->addMonths(6));

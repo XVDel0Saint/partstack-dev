@@ -42,7 +42,7 @@ fi
     php artisan cache:clear
     php artisan route:clear
 
-# Start PHP-FPM + Nginx
+# start PHP-FPM + Nginx
     echo "Starting PHP-FPM and Nginx..."
     php-fpm -D
     nginx -g 'daemon off;'
